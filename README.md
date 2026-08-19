@@ -28,11 +28,11 @@ Nos interesa trabajar en la siguente **Temática de Investigación**:
 | Foto | Nombre | Rol | Intereses |
 |------|--------|-----|-----------|
 | <img src="/Recursos/Imágenes/diego.png" width="90" height="90"/> | **Diego David Lázaro Abanto** | Líder del equipo | Investigación y redacción científica enfocada en las señales biomédicas |
-| <img src="/Recursos/Imágenes/alejadro.png" width="90" height="90" /> | **Alejandro Josue Ramos Guerra** | Responsable de investigación | Gestión ambiental, desarrollo comunitario |
+| <img src="/Recursos/Imágenes/alejadro.png" width="85" height="90" /> | **Alejandro Josue Ramos Guerra** | Responsable de investigación | Gestión ambiental, desarrollo comunitario |
 | <img src="/Recursos/Imágenes/abner.png" width="90" height="90" /> | **Abner Mihails Hoyos Puente** | Diseñador| Innovar en los métodos de rehabilitación mediante creatividad aplicada |
 | <img src="/Recursos/Imágenes/gabriela.png" width="90" height="90" /> | **Gabriela Estefanía Neyra Quezada** | Encargada de documentación | Innovación en la robótica |
 | <img src="/Recursos/Imágenes/kiara.png" width="90" height="90" /> | **Kiara Pierina Muñoz Huatuco** | Coordinadora general | Avances tecnológicos modernos enfocados en la biomedicina y en la biotecnología|
-| <img src="/Recursos/Imágenes/valeria.png" width="90" height="90" /> | **Valeria Jimena Martínez Aquino** | Programadora - Modeladora | Correción de errores en sistemas tecnológicos |
+| <img src="/Recursos/Imágenes/valeria.png" width="85" height="90" /> | **Valeria Jimena Martínez Aquino** | Programadora - Modeladora | Correción de errores en sistemas tecnológicos |
 ---
 
 ## 📌 Resumen Final  
