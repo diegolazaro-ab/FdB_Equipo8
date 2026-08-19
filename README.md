@@ -8,12 +8,9 @@
 Somos el **Equipo 08** del curso **Fundamentos de Biodiseño 2026-2**, conformado por estudiantes de la carrera de Ingeniería Biomédica.  
 Nuestro objetivo es aplicar la metodología de diseño para generar soluciones innovadoras con impacto social, tecnológico y ambiental.  
 
-Nos interesa trabajar en los siguientes **Objetivos de Desarrollo Sostenible (ODS):**  
-- ODS 3: Salud y Bienestar  
-- ODS 6: Agua Limpia y Saneamiento  
-- ODS 9: Industria, Innovación e Infraestructura  
-- ODS 11: Ciudades y Comunidades Sostenibles  
-- ODS 13: Acción por el Clima  
+Nos interesa trabajar en la siguente **Temática de Investigación**:
+
+- Temáticas neurológicas, postural y de la marcha
 
 ---
 
@@ -32,10 +29,10 @@ Nos interesa trabajar en los siguientes **Objetivos de Desarrollo Sostenible (OD
 |------|--------|-----|-----------|
 | <img src="/Recursos/Imágenes/diego.png" width="90"/> | **Diego David Lázaro Abanto** | Líder del equipo | Innovación social, sostenibilidad |
 | <img src="/Recursos/Imágenes/alejadro.png" width="90"/> | **Alejandro Josue Ramos Guerra** | Responsable de investigación | Gestión ambiental, desarrollo comunitario |
-| <img src="/Recursos/Imágenes/abner.png" width="90"/> | **Abner Mihails Hoyos Puente** | Diseñador/a | Diseño de prototipos, creatividad aplicada |
-| <img src="/Recursos/Imágenes/gabriela.png" width="90"/> | **Gabriela Estefanía Neyra Quezada** | Encargado/a de documentación | Comunicación científica, redacción técnica |
-| <img src="/Recursos/Imágenes/kiara.png" width="90"/> | **Kiara Pierina Muñoz Huatuco** | Programador/a - Modelador/a | Programación, análisis de datos, simulación |
-| <img src="/Recursos/Imágenes/valeria.png" width="90"/> | **Valeria Jimena Martínez Aquino** | Programador/a - Modelador/a | Programación, análisis de datos, simulación |
+| <img src="/Recursos/Imágenes/abner.png" width="90"/> | **Abner Mihails Hoyos Puente** | Diseñador| Diseño de prototipos, creatividad aplicada |
+| <img src="/Recursos/Imágenes/gabriela.png" width="90"/> | **Gabriela Estefanía Neyra Quezada** | Encargada de documentación | Comunicación científica, redacción técnica |
+| <img src="/Recursos/Imágenes/kiara.png" width="90"/> | **Kiara Pierina Muñoz Huatuco** | Coordinadora general | Comparación de resultados e investigación |
+| <img src="/Recursos/Imágenes/valeria.png" width="90"/> | **Valeria Jimena Martínez Aquino** | Programadora - Modeladora | Programación, análisis de datos, simulación |
 ---
 
 ## 📌 Resumen Final  
