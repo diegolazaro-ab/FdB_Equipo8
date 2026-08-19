@@ -27,12 +27,12 @@ Nos interesa trabajar en la siguente **Temática de Investigación**:
 
 | Foto | Nombre | Rol | Intereses |
 |------|--------|-----|-----------|
-| <img src="/Recursos/Imágenes/diego.png" width="90"/> | **Diego David Lázaro Abanto** | Líder del equipo | Innovación social, sostenibilidad |
+| <img src="/Recursos/Imágenes/diego.png" width="90"/> | **Diego David Lázaro Abanto** | Líder del equipo | Investigación y redacción científica enfocada en las señales biomédicas |
 | <img src="/Recursos/Imágenes/alejadro.png" width="90"/> | **Alejandro Josue Ramos Guerra** | Responsable de investigación | Gestión ambiental, desarrollo comunitario |
-| <img src="/Recursos/Imágenes/abner.png" width="90"/> | **Abner Mihails Hoyos Puente** | Diseñador| Diseño de prototipos, creatividad aplicada |
-| <img src="/Recursos/Imágenes/gabriela.png" width="90"/> | **Gabriela Estefanía Neyra Quezada** | Encargada de documentación | Comunicación científica, redacción técnica |
-| <img src="/Recursos/Imágenes/kiara.png" width="90"/> | **Kiara Pierina Muñoz Huatuco** | Coordinadora general | Comparación de resultados e investigación |
-| <img src="/Recursos/Imágenes/valeria.png" width="90"/> | **Valeria Jimena Martínez Aquino** | Programadora - Modeladora | Programación, análisis de datos, simulación |
+| <img src="/Recursos/Imágenes/abner.png" width="90"/> | **Abner Mihails Hoyos Puente** | Diseñador| Innovar en los métodos de rehabilitación mediante creatividad aplicada |
+| <img src="/Recursos/Imágenes/gabriela.png" width="90"/> | **Gabriela Estefanía Neyra Quezada** | Encargada de documentación | Innovación en la robótica |
+| <img src="/Recursos/Imágenes/kiara.png" width="90"/> | **Kiara Pierina Muñoz Huatuco** | Coordinadora general | Avances tecnológicos modernos enfocados en la biomedicina y en la biotecnología|
+| <img src="/Recursos/Imágenes/valeria.png" width="90"/> | **Valeria Jimena Martínez Aquino** | Programadora - Modeladora | Correción de errores en sistemas tecnológicos |
 ---
 
 ## 📌 Resumen Final  
