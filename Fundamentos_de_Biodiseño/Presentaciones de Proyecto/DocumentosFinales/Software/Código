@@ -1,0 +1,285 @@
+#include <Wire.h>
+#include "BluetoothSerial.h" // <--- BLUETOOTH: Librería Bluetooth clásico
+
+BluetoothSerial SerialBT;    // <--- BLUETOOTH: Objeto Bluetooth
+
+// ===================== MODO SERVO =====================
+// 0 = sin servo conectado: solo indica el estado por el monitor serial
+// 1 = con servo conectado (requiere biblioteca ESP32Servo y alimentación de 5V externa)
+#define USE_SERVO 1
+
+#if USE_SERVO
+  #include <ESP32Servo.h>
+  Servo servo;
+  const int SERVO_PIN = 13;
+
+  // false = servo POSICIONAL: va a una posición y SE QUEDA ahí (no regresa solo).
+  //         Cada activación lo lleva al extremo contrario (reposo <-> destino).
+  // true  = servo de rotación continua: gira SERVO_RUN_MS con pulso fijo y se detiene.
+  const bool SERVO_CONTINUOUS = false;
+
+  // --- Servo POSICIONAL ---
+  // Rango de pulsos. 500-2500 µs es el máximo normal (~180°).
+  // Para MÁS giro se puede ampliar con cuidado (ej. 400 y 2600); si el servo zumba al llegar al tope, reducir.
+  const int SERVO_REST_US   = 500;    // Posición de reposo
+  const int SERVO_TARGET_US = 2500;   // Posición de destino (extremo contrario)
+
+  // --- Servo CONTINUO ---
+  const int SERVO_STOP_US = 1500;     // Pulso de parada (ajustar 1480-1520 si se mueve solo)
+  const int SERVO_RUN_US  = 2400;     // >1500 = un sentido, <1500 = el contrario
+#endif
+
+// ===================== CONFIGURACIÓN =====================
+const uint8_t MPU1_ADDR = 0x68;   // Mano  (AD0 -> GND)
+const uint8_t MPU2_ADDR = 0x69;   // Brazo (AD0 -> 3.3V)
+
+// --- Detección del movimiento relativo ---
+const float TRIGGER_DEG   = 20.0;   // Cambio de ángulo relativo (vs. reposo) que activa
+const float REARM_DEG     = 10.0;   // Debe volver por debajo de este valor para rearmar
+const float DEADBAND_DEG  = 1.0;    // Ignora variaciones menores
+const float LPF_FC_HZ     = 3.0;    // Pasa-bajos del ángulo relativo
+const uint32_t HOLD_MS    = 80;     // El movimiento debe mantenerse este tiempo para activar
+
+// --- Duración del movimiento ---
+// Servo posicional: tiempo que se manda la orden de ir al destino (suficiente para llegar).
+// Servo continuo: tiempo de giro (calibrar para una vuelta).
+const uint32_t SERVO_RUN_MS = 1000;
+const uint32_t COOLDOWN_MS  = 1000;
+
+// --- Filtro complementario / muestreo ---
+const float LOOP_HZ = 100.0;
+const uint32_t LOOP_US = (uint32_t)(1000000.0 / LOOP_HZ);
+const float ALPHA = 0.98;
+const float GYRO_SENS = 131.0;      // LSB/(°/s) para ±250 °/s
+// =========================================================
+
+struct IMU {
+  uint8_t addr;
+  float gyroBiasY = 0;
+  float pitch = 0;
+};
+IMU imu1{MPU1_ADDR}, imu2{MPU2_ADDR};
+
+float relRest = 0;
+float relFiltered = 0;
+
+enum State { IDLE, RUNNING, COOLDOWN };
+State state = IDLE;
+bool armed = true;
+uint32_t stateStart = 0;
+uint32_t overSince = 0;
+uint32_t lastLoopUs = 0;
+
+void wakeMPU(uint8_t addr) {
+  Wire.beginTransmission(addr);
+  Wire.write(0x6B);
+  Wire.write(0x00);
+  Wire.endTransmission(true);
+}
+
+void readMPU(uint8_t addr, int16_t &ax, int16_t &ay, int16_t &az,
+             int16_t &gx, int16_t &gy, int16_t &gz) {
+  Wire.beginTransmission(addr);
+  Wire.write(0x3B);
+  Wire.endTransmission(false);
+  Wire.requestFrom(addr, (size_t)14, true);
+
+  ax = (Wire.read() << 8) | Wire.read();
+  ay = (Wire.read() << 8) | Wire.read();
+  az = (Wire.read() << 8) | Wire.read();
+  Wire.read(); Wire.read();
+  gx = (Wire.read() << 8) | Wire.read();
+  gy = (Wire.read() << 8) | Wire.read();
+  gz = (Wire.read() << 8) | Wire.read();
+}
+
+void updateIMU(IMU &m, float dt) {
+  int16_t ax, ay, az, gx, gy, gz;
+  readMPU(m.addr, ax, ay, az, gx, gy, gz);
+
+  float accPitch = atan2f(-(float)ax, sqrtf((float)ay * ay + (float)az * az)) * 180.0f / PI;
+  float gyroRate = ((float)gy / GYRO_SENS) - m.gyroBiasY;
+
+  m.pitch = ALPHA * (m.pitch + gyroRate * dt) + (1.0f - ALPHA) * accPitch;
+}
+
+void calibrate() {
+  Serial.println("Calibrando... mantener mano y brazo en reposo");
+  const int N = 200;
+  float sum1 = 0, sum2 = 0;
+  for (int i = 0; i < N; i++) {
+    int16_t ax, ay, az, gx, gy, gz;
+    readMPU(MPU1_ADDR, ax, ay, az, gx, gy, gz); sum1 += gy / GYRO_SENS;
+    readMPU(MPU2_ADDR, ax, ay, az, gx, gy, gz); sum2 += gy / GYRO_SENS;
+    delay(10);
+  }
+  imu1.gyroBiasY = sum1 / N;
+  imu2.gyroBiasY = sum2 / N;
+
+  int16_t ax, ay, az, gx, gy, gz;
+  readMPU(MPU1_ADDR, ax, ay, az, gx, gy, gz);
+  imu1.pitch = atan2f(-(float)ax, sqrtf((float)ay * ay + (float)az * az)) * 180.0f / PI;
+  readMPU(MPU2_ADDR, ax, ay, az, gx, gy, gz);
+  imu2.pitch = atan2f(-(float)ax, sqrtf((float)ay * ay + (float)az * az)) * 180.0f / PI;
+
+  float dt = 1.0f / LOOP_HZ;
+  for (int i = 0; i < 100; i++) {
+    updateIMU(imu1, dt);
+    updateIMU(imu2, dt);
+    delay(10);
+  }
+  relRest = imu1.pitch - imu2.pitch;
+  relFiltered = 0;
+  Serial.printf("Tara lista. Relativo reposo = %.2f deg\n", relRest);
+}
+
+// ---- Acciones del servo (no hacen nada si USE_SERVO = 0) ----
+#if USE_SERVO
+  bool servoAtTarget = false;           // true = el servo está en la posición de destino
+  int  servoTargetUs = SERVO_REST_US;   // posición que se manda durante el movimiento
+#endif
+
+// Al activarse: elige hacia dónde ir (posicional: al extremo contrario)
+void servoOnTrigger() {
+#if USE_SERVO
+  if (!SERVO_CONTINUOUS) {
+    servoAtTarget = !servoAtTarget;
+    servoTargetUs = servoAtTarget ? SERVO_TARGET_US : SERVO_REST_US;
+  }
+#endif
+}
+
+// Mientras dura el movimiento
+void servoRunUpdate() {
+#if USE_SERVO
+  if (SERVO_CONTINUOUS) servo.writeMicroseconds(SERVO_RUN_US);
+  else                  servo.writeMicroseconds(servoTargetUs);
+#endif
+}
+
+// Al terminar el movimiento: el posicional se queda donde está; el continuo se detiene
+void servoFinish() {
+#if USE_SERVO
+  if (SERVO_CONTINUOUS) servo.writeMicroseconds(SERVO_STOP_US);
+#endif
+}
+
+// Reposo inicial / tara
+void servoReset() {
+#if USE_SERVO
+  if (SERVO_CONTINUOUS) {
+    servo.writeMicroseconds(SERVO_STOP_US);
+  } else {
+    servoAtTarget = false;
+    servoTargetUs = SERVO_REST_US;
+    servo.writeMicroseconds(SERVO_REST_US);
+  }
+#endif
+}
+
+void setup() {
+  Serial.begin(115200);
+  SerialBT.begin("ESP32_Guante"); // <--- BLUETOOTH: Enciende antena con este nombre
+  Serial.println("Bluetooth listo: ESP32_Guante");
+
+  Wire.begin(21, 22);
+  Wire.setClock(400000);
+  delay(100);
+
+  wakeMPU(MPU1_ADDR);
+  wakeMPU(MPU2_ADDR);
+  delay(100);
+
+#if USE_SERVO
+  servo.setPeriodHertz(50);
+  servo.attach(SERVO_PIN, 500, 2500);
+#endif
+  servoReset();
+
+  calibrate();
+  Serial.println("Estado: Servomotor quieto");
+  lastLoopUs = micros();
+}
+
+void loop() {
+  // <--- BLUETOOTH: Escucha si la app envía "T\n" para recalibrar (Tara)
+  while (SerialBT.available()) {
+    char cmd = (char)SerialBT.read();
+    if (cmd == 'T' || cmd == 't') {
+      servoReset();
+      state = IDLE;
+      armed = true;
+      overSince = 0;
+      calibrate();
+      lastLoopUs = micros(); // Reinicia el contador de tiempo tras calibrar
+    }
+  }
+
+  uint32_t nowUs = micros();
+  if (nowUs - lastLoopUs < LOOP_US) return;
+  float dt = (nowUs - lastLoopUs) / 1000000.0f;
+  lastLoopUs = nowUs;
+  uint32_t nowMs = millis();
+
+  updateIMU(imu1, dt);
+  updateIMU(imu2, dt);
+
+  float rel = (imu1.pitch - imu2.pitch) - relRest;
+  if (fabsf(rel) < DEADBAND_DEG) rel = 0;
+  float rc = 1.0f / (2.0f * PI * LPF_FC_HZ);
+  float a = dt / (rc + dt);
+  relFiltered += a * (rel - relFiltered);
+
+  float mag = fabsf(relFiltered);
+
+  if (!armed && mag < REARM_DEG) armed = true;
+
+  switch (state) {
+    case IDLE:
+      if (armed && mag > TRIGGER_DEG) {
+        if (overSince == 0) overSince = nowMs;
+        if (nowMs - overSince >= HOLD_MS) {
+          state = RUNNING;
+          stateStart = nowMs;
+          armed = false;
+          overSince = 0;
+          servoOnTrigger();
+          Serial.println(">>> Servomotor girando");
+        }
+      } else {
+        overSince = 0;
+      }
+      break;
+
+    case RUNNING: {
+      uint32_t elapsed = nowMs - stateStart;
+      if (elapsed >= SERVO_RUN_MS) {
+        servoFinish();
+        state = COOLDOWN;
+        stateStart = nowMs;
+        Serial.println(">>> Servomotor quieto");
+      } else {
+        servoRunUpdate();
+      }
+      break;
+    }
+
+    case COOLDOWN:
+      if (nowMs - stateStart >= COOLDOWN_MS) state = IDLE;
+      break;
+  }
+
+  // Línea de seguimiento cada 100 ms (Serial USB + Bluetooth App)
+  static uint32_t lastPrint = 0;
+  if (nowMs - lastPrint >= 100) {
+    lastPrint = nowMs;
+    Serial.printf("P1:%.1f P2:%.1f Rel:%.2f | %s\n",
+                  imu1.pitch, imu2.pitch, relFiltered,
+                  state == RUNNING ? "Servomotor girando" : "Servomotor quieto");
+
+    // <--- BLUETOOTH: Envía formato exacto R,<angulo>,<estado>\n a MIT App Inventor
+    int estadoBT = (state == RUNNING) ? 1 : 0;
+    SerialBT.printf("R,%.2f,%d\n", relFiltered, estadoBT);
+  }
+}
+    
